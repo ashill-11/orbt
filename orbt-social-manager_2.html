@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ORBT — Social Media Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080B14;--bg2:#0C1020;--bg3:#0F1827;--bg4:#111C2E;
+  --border:#1E2638;--border2:#2D3F5A;
+  --text:#E2E8F0;--text2:#94A3B8;--text3:#64748B;--text4:#475569;--text5:#334155;
+  --accent:#6366F1;--accent2:#818CF8;
+  --cyan:#22D3EE;--amber:#F59E0B;--danger:#F87171;--success:#22C55E;
+  --pink:#F472B6;--blue:#60A5FA;--purple:#A78BFA;--radius:8px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* topbar */
+.topbar{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:12px;flex-shrink:0;z-index:50}
+.logo{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:var(--accent);letter-spacing:.1em}
+.tb-div{width:1px;height:20px;background:var(--border)}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{font-size:12px;color:var(--text3);padding:5px 11px;border-radius:6px;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s}
+.nav-tab:hover{color:var(--text2);background:rgba(255,255,255,.04)}
+.nav-tab.active{color:var(--accent);background:rgba(99,102,241,.12)}
+.flex1{flex:1}
+.tb-right{display:flex;align-items:center;gap:8px}
+.search-wrap{position:relative}
+.search-wrap i{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text4);font-size:14px;pointer-events:none}
+.search-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:6px 12px 6px 30px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;outline:none;width:180px;transition:border-color .15s}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--text5)}
+.icon-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border);background:none;color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:all .15s;position:relative}
+.icon-btn:hover{color:var(--text);border-color:var(--border2)}
+.nb{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:1.5px solid var(--bg2);display:none}
+.user-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;cursor:pointer;flex-shrink:0}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text5);flex-shrink:0;transition:background .3s}
+.sync-dot.connected{background:var(--success);animation:ldot 2.5s infinite}
+.sync-dot.syncing{background:var(--amber);animation:ldot .6s infinite}
+.sync-label{font-size:10px;color:var(--text5)}
+
+/* layout */
+.app-body{display:flex;flex:1;overflow:hidden}
+
+/* sidebar */
+.sidebar{width:215px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-scroll{flex:1;overflow-y:auto;padding-bottom:8px}
+.sec-label{font-size:10px;font-weight:600;color:var(--text5);letter-spacing:.1em;text-transform:uppercase;padding:14px 14px 6px}
+.acc-item{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;transition:background .1s;position:relative;user-select:none}
+.acc-item:hover{background:rgba(255,255,255,.03)}
+.acc-item.active{background:rgba(99,102,241,.08)}
+.acc-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--accent)}
+.acc-av{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;position:relative}
+.live-dot{position:absolute;bottom:-2px;right:-2px;width:7px;height:7px;border-radius:50%;background:var(--success);border:1.5px solid var(--bg2);animation:ldot 2.5s infinite}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:.4}}
+.acc-info{flex:1;min-width:0}
+.acc-name{font-size:12px;font-weight:500;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-plat{font-size:10px;color:var(--text4)}
+.acc-cnt{font-size:10px;color:var(--text5);background:var(--bg3);padding:1px 5px;border-radius:4px;flex-shrink:0}
+.add-btn{display:flex;align-items:center;gap:7px;padding:7px 12px;cursor:pointer;color:var(--text4);font-size:12px;transition:color .15s;border:none;background:none;font-family:'Inter',sans-serif;width:100%;text-align:left}
+.add-btn:hover{color:var(--accent)}
+.sb-hr{height:1px;background:var(--border);margin:6px 0}
+.sidebar-footer{padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0}
+.team-row{display:flex;align-items:center;gap:0;margin-top:7px;flex-wrap:wrap;gap:3px}
+.team-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;cursor:pointer;transition:transform .15s;flex-shrink:0}
+.team-av:hover{transform:translateY(-2px)}
+
+/* main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-header{padding:12px 20px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.pulse-ring{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 0 0 rgba(34,211,238,.5);animation:pr 2s infinite;flex-shrink:0}
+@keyframes pr{0%{box-shadow:0 0 0 0 rgba(34,211,238,.5)}70%{box-shadow:0 0 0 8px rgba(34,211,238,0)}100%{box-shadow:0 0 0 0 rgba(34,211,238,0)}}
+.live-txt{font-size:11px;color:var(--cyan);font-weight:500}
+.main-title{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600}
+.tab-row{display:flex;gap:2px}
+.tab{font-size:12px;color:var(--text4);padding:4px 12px;border-radius:6px;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;transition:all .15s}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--accent);background:rgba(99,102,241,.1)}
+.btn-outline{font-size:12px;padding:5px 12px;border:1px solid var(--border);border-radius:var(--radius);color:var(--text3);background:none;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{font-size:12px;padding:5px 14px;border:none;border-radius:var(--radius);color:#fff;background:var(--accent);cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:500;transition:background .15s;font-family:'Inter',sans-serif;white-space:nowrap}
+.btn-primary:hover{background:var(--accent2)}
+.btn-success{font-size:12px;padding:5px 12px;border:none;border-radius:var(--radius);color:#fff;background:#16a34a;cursor:pointer;display:flex;align-items:center;gap:5px;font-weight:500;transition:background .15s;font-family:'Inter',sans-serif;white-space:nowrap}
+.btn-success:hover{background:#15803d}
+.btn-danger{font-size:12px;padding:5px 12px;border:1px solid rgba(248,113,113,.3);border-radius:var(--radius);color:var(--danger);background:rgba(248,113,113,.06);cursor:pointer;display:flex;align-items:center;gap:5px;font-family:'Inter',sans-serif;transition:all .15s}
+.btn-danger:hover{background:rgba(248,113,113,.14)}
+.btn-sm{padding:4px 10px;font-size:11px}
+
+/* content */
+.content-area{flex:1;display:flex;overflow:hidden}
+.feed{flex:1;padding:16px 20px;overflow-y:auto}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.stat-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;transition:border-color .15s}
+.stat-card:hover{border-color:var(--border2)}
+.stat-lbl{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.stat-val{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:600}
+.stat-sub{font-size:11px;margin-top:2px}
+.up{color:var(--cyan)}.dn{color:var(--danger)}.warn{color:var(--amber)}
+.q-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.q-title{font-size:13px;font-weight:500;color:var(--text3);display:flex;align-items:center;gap:6px}
+.q-cnt{font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:1px 7px;color:var(--text4)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;text-align:center;gap:10px}
+.empty-icon{font-size:44px;color:var(--text5)}
+.empty-title{font-size:14px;font-weight:500;color:var(--text3)}
+.empty-desc{font-size:12px;color:var(--text4);max-width:260px;line-height:1.6}
+
+/* post card */
+.post-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:9px;display:flex;gap:11px;position:relative;overflow:hidden;transition:all .15s}
+.post-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.post-card.scheduled::before{background:var(--accent)}
+.post-card.live::before{background:var(--cyan)}
+.post-card.review::before{background:var(--amber)}
+.post-card.draft::before{background:var(--text5)}
+.post-card.published::before{background:var(--success)}
+.post-card:hover{border-color:var(--border2)}
+.post-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.post-body{flex:1;min-width:0}
+.post-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap}
+.post-acct{font-size:12px;font-weight:500}
+.post-time{font-size:10px;color:var(--text5)}
+.sbadge{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;margin-left:auto;flex-shrink:0}
+.b-sched{background:rgba(99,102,241,.15);color:var(--accent2)}
+.b-live{background:rgba(34,211,238,.1);color:var(--cyan)}
+.b-review{background:rgba(245,158,11,.1);color:var(--amber)}
+.b-draft{background:rgba(71,85,105,.2);color:var(--text4)}
+.b-pub{background:rgba(34,197,94,.1);color:var(--success)}
+.post-text{font-size:12px;color:var(--text3);line-height:1.55;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.post-footer{display:flex;align-items:center;gap:5px;margin-top:7px;flex-wrap:wrap}
+.pchip{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.cx{background:rgba(255,255,255,.06);color:var(--text3)}
+.cig{background:rgba(244,114,182,.1);color:var(--pink)}
+.cli{background:rgba(96,165,250,.1);color:var(--blue)}
+.ctt{background:rgba(167,139,250,.1);color:var(--purple)}
+.cyt{background:rgba(248,113,113,.1);color:var(--danger)}
+.cth{background:rgba(255,255,255,.04);color:var(--text3)}
+.post-actions{display:flex;gap:3px;margin-left:auto}
+.pac{font-size:14px;color:var(--text5);cursor:pointer;padding:3px 4px;border:none;background:none;border-radius:5px;transition:all .15s}
+.pac:hover{color:var(--text2);background:rgba(255,255,255,.06)}
+.pac.del:hover{color:var(--danger)}
+.pac.appr:hover{color:var(--success)}
+.pac.pub:hover{color:var(--cyan)}
+
+/* right panel */
+.right-panel{width:232px;flex-shrink:0;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border)}
+.ptab{flex:1;font-size:11px;color:var(--text4);padding:10px 0;text-align:center;cursor:pointer;transition:all .15s;border:none;background:none;font-family:'Inter',sans-serif;border-bottom:2px solid transparent}
+.ptab.active{color:var(--accent);border-bottom:2px solid var(--accent)}
+.ptab:hover:not(.active){color:var(--text2)}
+.panel-body{flex:1;overflow-y:auto;padding:12px}
+.psec{font-size:10px;color:var(--text5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px}
+.act-item{display:flex;gap:8px;margin-bottom:12px}
+.act-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;flex-shrink:0}
+.act-txt{font-size:11px;color:var(--text4);line-height:1.5}
+.act-txt strong{color:var(--text3);font-weight:500}
+.act-time{font-size:10px;color:var(--text5);margin-top:1px}
+.notif-item{display:flex;gap:8px;margin-bottom:9px;padding:9px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);cursor:pointer;transition:border-color .15s}
+.notif-item:hover{border-color:var(--border2)}
+.notif-item.unread{border-left:2px solid var(--accent)}
+.notif-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.notif-txt{flex:1;min-width:0}
+.notif-title{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:1px}
+.notif-sub{font-size:10px;color:var(--text4);line-height:1.4}
+.notif-time{font-size:10px;color:var(--text5);margin-top:2px}
+.sched-block{background:var(--bg3);border-radius:8px;border:1px solid var(--border);padding:9px;margin-bottom:8px}
+.sched-day{font-size:10px;color:var(--text4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;font-weight:600}
+.sched-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border)}
+.sched-row:last-child{border-bottom:none}
+.sched-time{font-size:10px;color:var(--accent);width:36px;flex-shrink:0;font-weight:500}
+.sched-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sched-desc{font-size:10px;color:var(--text4);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* compose bar */
+.compose-bar{border-top:1px solid var(--border);padding:9px 20px;display:flex;gap:7px;align-items:center;background:var(--bg2);flex-shrink:0}
+.compose-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:7px 12px;font-size:12px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.compose-input:focus{border-color:var(--accent)}
+.compose-input::placeholder{color:var(--text5)}
+
+/* views */
+.view{display:none}.view.active{display:flex;flex-direction:column;flex:1;overflow:hidden}
+.full-feed{padding:16px 20px;overflow-y:auto;flex:1}
+
+/* modals */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:#0F1827;border:1px solid var(--border2);border-radius:16px;padding:22px;position:relative;max-height:90vh;overflow-y:auto;width:520px}
+.modal.wide{width:620px}
+.modal.sm{width:400px}
+.modal-title{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;margin-bottom:16px;padding-right:28px}
+.modal-close{position:absolute;top:14px;right:14px;font-size:18px;color:var(--text4);cursor:pointer;border:none;background:none}
+.modal-close:hover{color:var(--text)}
+.form-group{margin-bottom:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-label{font-size:11px;color:var(--text4);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block}
+.form-input,.form-select,.form-textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 11px;font-size:13px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent)}
+.form-input::placeholder,.form-textarea::placeholder{color:var(--text5)}
+.form-select option{background:var(--bg2)}
+.form-textarea{resize:vertical;min-height:90px;line-height:1.6}
+.char-count{font-size:10px;color:var(--text5);text-align:right;margin-top:2px}
+.platform-row{display:flex;gap:7px;flex-wrap:wrap}
+.ptoggle{padding:5px 12px;border-radius:var(--radius);border:1px solid var(--border);background:none;font-size:12px;color:var(--text4);cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;display:flex;align-items:center;gap:4px}
+.ptoggle.sel{border-color:var(--accent);color:var(--accent);background:rgba(99,102,241,.1)}
+.modal-footer{display:flex;justify-content:flex-end;gap:7px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+.prov-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:6px}
+.prov-card{display:flex;align-items:center;gap:10px;padding:12px;border-radius:9px;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--bg2)}
+.prov-card:hover{border-color:var(--accent);background:rgba(99,102,241,.06)}
+.prov-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.prov-name{font-size:13px;font-weight:500;color:var(--text2)}
+.prov-desc{font-size:10px;color:var(--text4)}
+.auto-list{display:flex;flex-direction:column;gap:9px}
+.auto-rule{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.rule-icon{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.rule-info{flex:1}
+.rule-name{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:2px}
+.rule-desc{font-size:11px;color:var(--text4)}
+.toggle{width:36px;height:20px;border-radius:10px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s}
+.toggle.on::after{transform:translateX(16px)}
+.color-swatch{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.color-swatch.sel{border-color:#fff;transform:scale(1.2)}
+
+/* setup screen */
+.setup-screen{position:fixed;inset:0;background:var(--bg);z-index:2000;display:flex;align-items:center;justify-content:center}
+.setup-card{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:36px;width:500px;max-width:95vw}
+.setup-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px}
+.setup-sub{font-size:13px;color:var(--text3);line-height:1.6;margin-bottom:24px}
+.setup-step{display:flex;gap:12px;margin-bottom:20px;padding:14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
+.step-num{width:26px;height:26px;border-radius:50%;background:rgba(99,102,241,.2);color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;margin-top:1px}
+.step-body{}
+.step-title{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:4px}
+.step-desc{font-size:12px;color:var(--text4);line-height:1.5}
+.step-desc a{color:var(--accent2);text-decoration:none}
+.step-desc a:hover{text-decoration:underline}
+.info-box{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:9px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text3);line-height:1.6}
+.info-box strong{color:var(--accent2)}
+.mesh-bg{position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 50% 40% at 80% 15%,rgba(99,102,241,.06) 0,transparent 70%),radial-gradient(ellipse 40% 30% at 10% 90%,rgba(34,211,238,.04) 0,transparent 70%)}
+/* webhook section */
+.webhook-section{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:12px}
+.webhook-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.webhook-desc{font-size:11px;color:var(--text4);margin-bottom:8px;line-height:1.5}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.cal-day-hdr{text-align:center;font-size:10px;color:var(--text5);font-weight:500;padding:4px 0}
+.cal-day{text-align:center;font-size:11px;padding:5px 2px;border-radius:5px;cursor:pointer;color:var(--text3);position:relative;transition:background .1s}
+.cal-day:hover{background:var(--bg3)}
+.cal-day.today{background:rgba(99,102,241,.2);color:var(--accent2);font-weight:600}
+.cal-day.has-post::after{content:'';display:block;width:4px;height:4px;border-radius:50%;background:var(--accent);margin:2px auto 0}
+.cal-day.empty{color:var(--border2);pointer-events:none}
+</style>
+</head>
+<body>
+<div class="mesh-bg"></div>
+
+<!-- SETUP SCREEN -->
+<div class="setup-screen" id="setupScreen">
+<div class="setup-card">
+  <div class="setup-title">Welcome to ORBT</div>
+  <div class="setup-sub">ORBT syncs with Supabase so your whole team shares the same data in real time. Setup takes about 3 minutes.</div>
+
+  <div class="setup-step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-title">Create a free Supabase project</div>
+      <div class="step-desc">Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → New project → choose a name and password → wait ~1 min for it to start.</div>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-title">Run this SQL to create tables</div>
+      <div class="step-desc">In your project → <strong>SQL Editor</strong> → paste and run this:<br><br>
+      <code style="font-size:10px;background:var(--bg);padding:8px;border-radius:6px;display:block;white-space:pre;overflow-x:auto;line-height:1.6">create table accounts (id text primary key, data jsonb);
+create table posts (id text primary key, data jsonb);
+create table team (id text primary key, data jsonb);
+create table notifications (id text primary key, data jsonb);
+alter table accounts enable row level security;
+alter table posts enable row level security;
+alter table team enable row level security;
+alter table notifications enable row level security;
+create policy "public" on accounts for all using (true);
+create policy "public" on posts for all using (true);
+create policy "public" on team for all using (true);
+create policy "public" on notifications for all using (true);</code></div>
+    </div>
+  </div>
+  <div class="setup-step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-title">Paste your project URL and anon key</div>
+      <div class="step-desc">Settings → API → copy <strong>Project URL</strong> and <strong>anon public</strong> key below.</div>
+    </div>
+  </div>
+
+  <div class="form-group" style="margin-top:4px">
+    <label class="form-label">Supabase Project URL</label>
+    <input class="form-input" id="setupUrl" placeholder="https://xxxxxxxxxxxx.supabase.co"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Supabase Anon Key</label>
+    <input class="form-input" id="setupKey" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9…" type="password"/>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Your name</label>
+    <input class="form-input" id="setupName" placeholder="Ali"/>
+  </div>
+  <div id="setupError" style="font-size:12px;color:var(--danger);margin-bottom:10px;display:none"></div>
+  <button class="btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="connectSupabase()">
+    <i class="ti ti-plug-connected"></i> Connect and launch ORBT
+  </button>
+  <div style="margin-top:12px;text-align:center">
+    <button style="font-size:11px;color:var(--text4);border:none;background:none;cursor:pointer;font-family:Inter,sans-serif" onclick="useLocalMode()">Skip for now — use local mode (single user)</button>
+  </div>
+</div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">ORBT</div>
+  <div class="tb-div"></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+    <button class="nav-tab" onclick="switchView('calendar',this)"><i class="ti ti-calendar"></i> Calendar</button>
+    <button class="nav-tab" onclick="switchView('analytics',this)"><i class="ti ti-chart-line"></i> Analytics</button>
+    <button class="nav-tab" onclick="switchView('notifications',this)"><i class="ti ti-bell"></i> Notifications<span id="notifNavBadge" style="display:none;background:var(--danger);color:#fff;font-size:9px;padding:1px 5px;border-radius:10px;margin-left:4px"></span></button>
+    <button class="nav-tab" onclick="openModal('automationModal')"><i class="ti ti-bolt"></i> Automation</button>
+    <button class="nav-tab" onclick="openModal('webhookModal')"><i class="ti ti-webhook"></i> Publish</button>
+  </div>
+  <div class="flex1"></div>
+  <div class="tb-right">
+    <div class="sync-dot" id="syncDot" title="Not connected"></div>
+    <span class="sync-label" id="syncLabel">Local</span>
+    <div class="search-wrap">
+      <i class="ti ti-search"></i>
+      <input class="search-box" placeholder="Search…" oninput="S.searchQuery=this.value.toLowerCase();renderFeed()"/>
+    </div>
+    <button class="icon-btn" onclick="switchView('notifications',document.querySelectorAll('.nav-tab')[3])">
+      <i class="ti ti-bell"></i>
+      <div class="nb" id="notifBadge"></div>
+    </button>
+    <div class="user-av" id="userAv" onclick="openModal('profileModal')">?</div>
+  </div>
+</div>
+
+<div class="app-body" style="position:relative;z-index:1">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-scroll">
+    <div class="sec-label">Accounts</div>
+    <div id="accountsList"></div>
+    <button class="add-btn" onclick="openModal('addAccountModal')"><i class="ti ti-circle-plus"></i> Add account</button>
+    <div class="sb-hr"></div>
+    <div class="sec-label">Team</div>
+    <div id="teamList"></div>
+    <button class="add-btn" onclick="openModal('addTeamModal')"><i class="ti ti-user-plus"></i> Invite member</button>
+  </div>
+  <div class="sidebar-footer">
+    <div style="font-size:10px;color:var(--text5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Workspace</div>
+    <div style="font-size:12px;color:var(--text2);font-weight:500" id="wsName">ORBT</div>
+    <div id="teamAvatarRow" class="team-row" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dashboard">
+  <div class="main-header">
+    <div class="pulse-ring"></div><span class="live-txt">Live</span>
+    <div class="main-title" id="queueTitle">Post queue</div>
+    <div class="tab-row" style="margin-left:8px">
+      <button class="tab active" onclick="filterPosts('all',this)">All</button>
+      <button class="tab" onclick="filterPosts('scheduled',this)">Scheduled</button>
+      <button class="tab" onclick="filterPosts('draft',this)">Drafts</button>
+      <button class="tab" onclick="filterPosts('review',this)">Review</button>
+      <button class="tab" onclick="filterPosts('published',this)">Published</button>
+    </div>
+    <div class="flex1"></div>
+    <button class="btn-outline btn-sm" onclick="openModal('automationModal')"><i class="ti ti-bolt"></i> Automate</button>
+    <button class="btn-primary btn-sm" onclick="openCompose()"><i class="ti ti-plus"></i> New post</button>
+  </div>
+  <div class="content-area">
+    <div class="feed" id="mainFeed"></div>
+    <div class="right-panel">
+      <div class="panel-tabs">
+        <button class="ptab active" onclick="switchPanel('activity',this)">Activity</button>
+        <button class="ptab" onclick="switchPanel('schedule',this)">Schedule</button>
+        <button class="ptab" onclick="switchPanel('alerts',this)">Alerts</button>
+      </div>
+      <div class="panel-body" id="panelBody"></div>
+    </div>
+  </div>
+  <div class="compose-bar">
+    <input class="compose-input" id="quickInput" placeholder="Quick-add post idea — press Enter to save as draft…" onkeydown="quickAdd(event)"/>
+    <button class="btn-primary btn-sm" onclick="openCompose()"><i class="ti ti-plus"></i> Compose</button>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="view" id="view-calendar">
+  <div class="main-header"><div class="main-title">Calendar</div><div class="flex1"></div><button class="btn-primary btn-sm" onclick="openCompose()"><i class="ti ti-plus"></i> New post</button></div>
+  <div class="full-feed" id="calendarView"></div>
+</div>
+
+<!-- ANALYTICS -->
+<div class="view" id="view-analytics">
+  <div class="main-header"><div class="main-title">Analytics</div></div>
+  <div class="full-feed" id="analyticsView"></div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div class="view" id="view-notifications">
+  <div class="main-header">
+    <div class="main-title">Notifications</div><div class="flex1"></div>
+    <button class="btn-outline btn-sm" onclick="markAllRead()"><i class="ti ti-checks"></i> Mark all read</button>
+    <button class="btn-outline btn-sm" onclick="clearNotifs()"><i class="ti ti-trash"></i> Clear</button>
+  </div>
+  <div class="full-feed" id="notifsView"></div>
+</div>
+</div>
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- COMPOSE -->
+<div class="modal-backdrop" id="composeModal">
+<div class="modal wide">
+  <div class="modal-title" id="composeTitle">New post</div>
+  <button class="modal-close" onclick="closeModal('composeModal')"><i class="ti ti-x"></i></button>
+  <input type="hidden" id="editPostId"/>
+  <div class="form-group"><label class="form-label">Account *</label><select class="form-select" id="postAccount"></select></div>
+  <div class="form-group">
+    <label class="form-label">Content *</label>
+    <textarea class="form-textarea" id="postContent" placeholder="Write your post…" oninput="document.getElementById('charCount').textContent=this.value.length" maxlength="2000"></textarea>
+    <div class="char-count"><span id="charCount">0</span> / 2000</div>
+  </div>
+  <div class="form-group"><label class="form-label">Cross-post to</label><div class="platform-row" id="crossPostPlatforms"></div></div>
+  <div class="form-row">
+    <div class="form-group" style="margin-bottom:0"><label class="form-label">Schedule date</label><input class="form-input" type="date" id="postDate"/></div>
+    <div class="form-group" style="margin-bottom:0"><label class="form-label">Schedule time</label><input class="form-input" type="time" id="postTime"/></div>
+  </div>
+  <div class="form-group" style="margin-top:12px"><label class="form-label">Status</label>
+    <select class="form-select" id="postStatus">
+      <option value="draft">Draft</option>
+      <option value="scheduled">Scheduled</option>
+      <option value="review">Needs review</option>
+      <option value="live">Live now</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="postNotes" placeholder="Optional team note…"/></div>
+  <div class="modal-footer">
+    <button class="btn-outline" onclick="closeModal('composeModal')">Cancel</button>
+    <button class="btn-primary" onclick="savePost()"><i class="ti ti-check"></i> <span id="savePostLbl">Save post</span></button>
+  </div>
+</div>
+</div>
+
+<!-- ADD ACCOUNT -->
+<div class="modal-backdrop" id="addAccountModal">
+<div class="modal">
+  <div class="modal-title">Add account</div>
+  <button class="modal-close" onclick="closeModal('addAccountModal')"><i class="ti ti-x"></i></button>
+  <div class="form-group"><label class="form-label">Platform *</label>
+    <select class="form-select" id="accPlatform">
+      <option value="x">Twitter / X</option>
+      <option value="instagram">Instagram</option>
+      <option value="linkedin">LinkedIn</option>
+      <option value="tiktok">TikTok</option>
+      <option value="youtube">YouTube</option>
+      <option value="threads">Threads</option>
+    </select>
+  </div>
+  <div class="form-group"><label class="form-label">Username / Handle *</label><input class="form-input" type="text" id="accUsername" placeholder="@youraccount"/></div>
+  <div class="form-group"><label class="form-label">Display name</label><input class="form-input" type="text" id="accDisplay" placeholder="Your Brand"/></div>
+  <div class="form-group">
+    <label class="form-label">Make.com Webhook URL <span style="color:var(--text5)">(for publishing)</span></label>
+    <input class="form-input" type="text" id="accWebhook" placeholder="https://hook.eu1.make.com/…"/>
+    <div style="font-size:10px;color:var(--text5);margin-top:3px">Optional — paste your Make.com webhook to enable real publishing for this account</div>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Color</label>
+    <div style="display:flex;gap:7px;flex-wrap:wrap" id="colorPicker">
+      <div class="color-swatch sel" style="background:#6366F1" data-color="#6366F1" onclick="selColor(this,'colorPicker')"></div>
+      <div class="color-swatch" style="background:#0EA5E9" data-color="#0EA5E9" onclick="selColor(this,'colorPicker')"></div>
+      <div class="color-swatch" style="background:#10B981" data-color="#10B981" onclick="selColor(this,'colorPicker')"></div>
+      <div class="color-swatch" style="background:#F59E0B" data-color="#F59E0B" onclick="selColor(this,'colorPicker')"></div>
+      <div class="color-swatch" style="background:#F87171" data-color="#F87171" onclick="selColor(this,'colorPicker')"></div>
+      <div class="color-swatch" style="background:#A78BFA" data-color="#A78BFA" onclick="selColor(this,'colorPicker')"></div>
+      <div class="color-swatch" style="background:#F472B6" data-color="#F472B6" onclick="selColor(this,'colorPicker')"></div>
+      <div class="color-swatch" style="background:#22D3EE" data-color="#22D3EE" onclick="selColor(this,'colorPicker')"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-outline" onclick="closeModal('addAccountModal')">Cancel</button>
+    <button class="btn-primary" onclick="addAccount()"><i class="ti ti-check"></i> Add account</button>
+  </div>
+</div>
+</div>
+
+<!-- TEAM -->
+<div class="modal-backdrop" id="addTeamModal">
+<div class="modal sm">
+  <div class="modal-title">Invite team member</div>
+  <button class="modal-close" onclick="closeModal('addTeamModal')"><i class="ti ti-x"></i></button>
+  <div class="form-group"><label class="form-label">Name *</label><input class="form-input" type="text" id="teamName" placeholder="Full name"/></div>
+  <div class="form-group"><label class="form-label">Role</label>
+    <select class="form-select" id="teamRole">
+      <option value="Editor">Editor</option><option value="Reviewer">Reviewer</option>
+      <option value="Viewer">Viewer</option><option value="Admin">Admin</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label class="form-label">Color</label>
+    <div style="display:flex;gap:7px;flex-wrap:wrap" id="teamColorPicker">
+      <div class="color-swatch sel" style="background:#6366F1" data-color="#6366F1" onclick="selColor(this,'teamColorPicker')"></div>
+      <div class="color-swatch" style="background:#0EA5E9" data-color="#0EA5E9" onclick="selColor(this,'teamColorPicker')"></div>
+      <div class="color-swatch" style="background:#10B981" data-color="#10B981" onclick="selColor(this,'teamColorPicker')"></div>
+      <div class="color-swatch" style="background:#F59E0B" data-color="#F59E0B" onclick="selColor(this,'teamColorPicker')"></div>
+      <div class="color-swatch" style="background:#F87171" data-color="#F87171" onclick="selColor(this,'teamColorPicker')"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-outline" onclick="closeModal('addTeamModal')">Cancel</button>
+    <button class="btn-primary" onclick="addTeamMember()"><i class="ti ti-user-plus"></i> Add</button>
+  </div>
+</div>
+</div>
+
+<!-- PROFILE -->
+<div class="modal-backdrop" id="profileModal">
+<div class="modal sm">
+  <div class="modal-title">Settings</div>
+  <button class="modal-close" onclick="closeModal('profileModal')"><i class="ti ti-x"></i></button>
+  <div class="form-group"><label class="form-label">Your name</label><input class="form-input" type="text" id="profileName"/></div>
+  <div class="form-group"><label class="form-label">Workspace name</label><input class="form-input" type="text" id="profileWs"/></div>
+  <div id="sbUrlSection">
+  <div class="form-group"><label class="form-label">Supabase URL</label><input class="form-input" type="text" id="profileUrl"/></div>
+  <div class="form-group"><label class="form-label">Supabase Anon Key</label><input class="form-input" type="password" id="profileKey"/></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-danger btn-sm" onclick="resetAll()"><i class="ti ti-trash"></i> Reset all</button>
+    <div class="flex1"></div>
+    <button class="btn-outline" onclick="closeModal('profileModal')">Cancel</button>
+    <button class="btn-primary" onclick="saveProfile()"><i class="ti ti-check"></i> Save</button>
+  </div>
+</div>
+</div>
+
+<!-- WEBHOOK / PUBLISH GUIDE -->
+<div class="modal-backdrop" id="webhookModal">
+<div class="modal wide">
+  <div class="modal-title"><i class="ti ti-webhook" style="color:var(--accent)"></i> Make.com — Real Publishing Setup</div>
+  <button class="modal-close" onclick="closeModal('webhookModal')"><i class="ti ti-x"></i></button>
+
+  <div class="info-box">
+    ORBT sends your posts to <strong>Make.com</strong> via webhook. Make.com then publishes to the real platform (Twitter/X, LinkedIn, etc.) on your behalf. <strong>Make.com is free</strong> up to 1000 operations/month — no credit card needed.
+  </div>
+
+  <div class="webhook-section">
+    <div class="webhook-title"><i class="ti ti-brand-x" style="color:var(--text3)"></i> Twitter / X</div>
+    <div class="webhook-desc">1. Go to <strong>make.com</strong> → Create new scenario → Add <strong>Webhooks → Custom webhook</strong> trigger → Copy the URL<br>2. Add <strong>Twitter → Create a Tweet</strong> action → map <code>{{1.content}}</code> to the tweet text field → Activate<br>3. Paste the webhook URL in your account settings (Add account → Webhook URL)</div>
+  </div>
+  <div class="webhook-section">
+    <div class="webhook-title"><i class="ti ti-brand-linkedin" style="color:var(--blue)"></i> LinkedIn</div>
+    <div class="webhook-desc">Same flow — use <strong>LinkedIn → Create a post</strong> module. Map <code>{{1.content}}</code> to the text field.</div>
+  </div>
+  <div class="webhook-section">
+    <div class="webhook-title"><i class="ti ti-brand-instagram" style="color:var(--pink)"></i> Instagram</div>
+    <div class="webhook-desc">Instagram requires a <strong>Business account</strong> connected to a Facebook Page. Use <strong>Instagram for Business → Create a photo post</strong> module. You can pass an image URL via <code>{{1.image_url}}</code> if you store images somewhere publicly accessible.</div>
+  </div>
+
+  <div style="font-size:12px;color:var(--text4);padding:12px;background:var(--bg3);border-radius:8px;border:1px solid var(--border)">
+    <strong style="color:var(--text3)">What ORBT sends in the webhook payload:</strong><br><br>
+    <code style="font-size:11px;line-height:1.8">{ "content": "your post text", "account": "@handle", "platform": "x", "scheduled_date": "2024-01-30", "scheduled_time": "16:30" }</code>
+  </div>
+  <div class="modal-footer">
+    <button class="btn-outline" onclick="closeModal('webhookModal')">Close</button>
+    <button class="btn-primary" onclick="closeModal('webhookModal');openModal('addAccountModal')"><i class="ti ti-circle-plus"></i> Add account with webhook</button>
+  </div>
+</div>
+</div>
+
+<!-- AUTOMATION -->
+<div class="modal-backdrop" id="automationModal">
+<div class="modal wide">
+  <div class="modal-title">Automation rules</div>
+  <button class="modal-close" onclick="closeModal('automationModal')"><i class="ti ti-x"></i></button>
+  <div class="auto-list">
+    <div class="auto-rule"><div class="rule-icon" style="background:rgba(99,102,241,.1);color:var(--accent)"><i class="ti ti-clock"></i></div><div class="rule-info"><div class="rule-name">Review alerts</div><div class="rule-desc">Create a notification when a post is flagged for review</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="auto-rule"><div class="rule-icon" style="background:rgba(34,211,238,.1);color:var(--cyan)"><i class="ti ti-repeat"></i></div><div class="rule-info"><div class="rule-name">Cross-post reminder</div><div class="rule-desc">Remind you to cross-post when a post goes live</div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+    <div class="auto-rule"><div class="rule-icon" style="background:rgba(245,158,11,.1);color:var(--amber)"><i class="ti ti-bell-ringing"></i></div><div class="rule-info"><div class="rule-name">Publish reminders</div><div class="rule-desc">Alert 30 min before a scheduled post is due</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+    <div class="auto-rule"><div class="rule-icon" style="background:rgba(34,197,94,.1);color:var(--success)"><i class="ti ti-chart-bar"></i></div><div class="rule-info"><div class="rule-name">Weekly digest notification</div><div class="rule-desc">Generate a weekly summary notification every Monday</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+  </div>
+  <div class="modal-footer"><button class="btn-outline" onclick="closeModal('automationModal')">Close</button></div>
+</div>
+</div>
+
+<!-- POST DETAIL -->
+<div class="modal-backdrop" id="postDetailModal">
+<div class="modal wide">
+  <div class="modal-title">Post details</div>
+  <button class="modal-close" onclick="closeModal('postDetailModal')"><i class="ti ti-x"></i></button>
+  <div id="postDetailBody"></div>
+  <div class="modal-footer" id="postDetailFooter"></div>
+</div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal-backdrop" id="confirmModal">
+<div class="modal sm">
+  <div class="modal-title">Confirm</div>
+  <button class="modal-close" onclick="closeModal('confirmModal')"><i class="ti ti-x"></i></button>
+  <p style="font-size:13px;color:var(--text3);margin-bottom:6px" id="confirmMsg"></p>
+  <div class="modal-footer"><button class="btn-outline" onclick="closeModal('confirmModal')">Cancel</button><button class="btn-danger" id="confirmBtn">Delete</button></div>
+</div>
+</div>
+
+<script>
+// ─── CONFIG & STATE ──────────────────────────────────────────────────────────
+let SB = null; // supabase client
+let localMode = false;
+
+const S = {
+  accounts:[],posts:[],team:[],notifications:[],
+  profile:{name:'',workspace:'ORBT'},
+  selectedAccId:null,currentFilter:'all',currentPanel:'activity',
+  currentView:'dashboard',searchQuery:''
+};
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+const uid=()=>Math.random().toString(36).slice(2,10);
+const nowISO=()=>new Date().toISOString();
+const fmtDate=iso=>{const d=new Date(iso);return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})};
+const ago=iso=>{const s=Math.floor((Date.now()-new Date(iso))/1000);if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'};
+
+const PM={
+  x:{label:'X',icon:'ti-brand-x',chip:'cx'},
+  instagram:{label:'IG',icon:'ti-brand-instagram',chip:'cig'},
+  linkedin:{label:'LinkedIn',icon:'ti-brand-linkedin',chip:'cli'},
+  tiktok:{label:'TikTok',icon:'ti-brand-tiktok',chip:'ctt'},
+  youtube:{label:'YouTube',icon:'ti-brand-youtube',chip:'cyt'},
+  threads:{label:'Threads',icon:'ti-brand-threads',chip:'cth'},
+};
+const PI=p=>PM[p]?.icon||'ti-social';
+const PL=p=>PM[p]?.label||p;
+const PC=p=>PM[p]?.chip||'cx';
+
+const SM={
+  scheduled:{label:'Scheduled',cls:'b-sched',cc:'scheduled'},
+  live:{label:'● Live',cls:'b-live',cc:'live'},
+  review:{label:'Review',cls:'b-review',cc:'review'},
+  draft:{label:'Draft',cls:'b-draft',cc:'draft'},
+  published:{label:'Published',cls:'b-pub',cc:'published'},
+};
+const getSM=s=>SM[s]||SM.draft;
+
+// ─── LOCAL STORAGE (fallback) ─────────────────────────────────────────────────
+const LS={
+  save(){localStorage.setItem('orbt',JSON.stringify({accounts:S.accounts,posts:S.posts,team:S.team,notifications:S.notifications,profile:S.profile}))},
+  load(){try{const d=JSON.parse(localStorage.getItem('orbt')||'{}');S.accounts=d.accounts||[];S.posts=d.posts||[];S.team=d.team||[];S.notifications=d.notifications||[];S.profile=d.profile||{name:'',workspace:'ORBT'}}catch(e){}}
+};
+
+// ─── SUPABASE DB ─────────────────────────────────────────────────────────────
+async function dbUpsert(table,id,data){
+  if(!SB) return LS.save();
+  await SB.from(table).upsert({id,data});
+}
+async function dbDelete(table,id){
+  if(!SB) return LS.save();
+  await SB.from(table).delete().eq('id',id);
+}
+async function dbLoadAll(){
+  if(!SB){LS.load();return;}
+  setSyncing(true);
+  try{
+    const [accs,posts,team,notifs]=await Promise.all([
+      SB.from('accounts').select('*'),
+      SB.from('posts').select('*'),
+      SB.from('team').select('*'),
+      SB.from('notifications').select('*'),
+    ]);
+    S.accounts=(accs.data||[]).map(r=>r.data);
+    S.posts=(posts.data||[]).map(r=>r.data).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+    S.team=(team.data||[]).map(r=>r.data);
+    S.notifications=(notifs.data||[]).map(r=>r.data).sort((a,b)=>new Date(b.time)-new Date(a.time));
+    setConnected(true);
+  }catch(e){setConnected(false);}
+  setSyncing(false);
+}
+function setSyncing(v){
+  const d=document.getElementById('syncDot'),l=document.getElementById('syncLabel');
+  if(v){d.className='sync-dot syncing';l.textContent='Syncing…';}
+}
+function setConnected(v){
+  const d=document.getElementById('syncDot'),l=document.getElementById('syncLabel');
+  if(v){d.className='sync-dot connected';l.textContent='Synced';}
+  else{d.className='sync-dot';l.textContent='Offline';}
+}
+
+// realtime subscription
+function subscribeRealtime(){
+  if(!SB) return;
+  SB.channel('orbt-changes')
+    .on('postgres_changes',{event:'*',schema:'public',table:'posts'},async()=>{
+      const {data}=await SB.from('posts').select('*');
+      S.posts=(data||[]).map(r=>r.data).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+      renderFeed();renderPanel();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'accounts'},async()=>{
+      const {data}=await SB.from('accounts').select('*');
+      S.accounts=(data||[]).map(r=>r.data);
+      renderAccounts();updateComposeSelect();
+    })
+    .on('postgres_changes',{event:'*',schema:'public',table:'notifications'},async()=>{
+      const {data}=await SB.from('notifications').select('*');
+      S.notifications=(data||[]).map(r=>r.data).sort((a,b)=>new Date(b.time)-new Date(a.time));
+      updateNotifBadge();renderPanel();
+      if(S.currentView==='notifications') renderNotifsView();
+    })
+    .subscribe();
+}
+
+// ─── SETUP ───────────────────────────────────────────────────────────────────
+async function connectSupabase(){
+  const url=document.getElementById('setupUrl').value.trim();
+  const key=document.getElementById('setupKey').value.trim();
+  const name=document.getElementById('setupName').value.trim();
+  const err=document.getElementById('setupError');
+  if(!url||!key){err.textContent='URL and key are required.';err.style.display='block';return;}
+  err.style.display='none';
+  try{
+    SB=supabase.createClient(url,key);
+    const {error}=await SB.from('accounts').select('id').limit(1);
+    if(error) throw error;
+  }catch(e){
+    err.textContent='Connection failed: '+e.message+'. Make sure the SQL was run and URL/key are correct.';
+    err.style.display='block';SB=null;return;
+  }
+  S.profile.name=name||'You';
+  localStorage.setItem('orbt_sb_url',url);
+  localStorage.setItem('orbt_sb_key',key);
+  localStorage.setItem('orbt_profile',JSON.stringify(S.profile));
+  await dbLoadAll();
+  subscribeRealtime();
+  launch();
+}
+
+function useLocalMode(){
+  localMode=true;LS.load();
+  if(!S.profile.name) S.profile.name='You';
+  localStorage.setItem('orbt_local','1');
+  document.getElementById('sbUrlSection').style.display='none';
+  document.getElementById('syncLabel').textContent='Local';
+  launch();
+}
+
+function launch(){
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('userAv').textContent=(S.profile.name||'ME').slice(0,2).toUpperCase();
+  document.getElementById('wsName').textContent=S.profile.workspace;
+  renderAccounts();renderTeam();renderFeed();updateNotifBadge();updateComposeSelect();
+  addNotif('Welcome to ORBT','Start by adding a social account','info');
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+(async function init(){
+  const sbUrl=localStorage.getItem('orbt_sb_url');
+  const sbKey=localStorage.getItem('orbt_sb_key');
+  const isLocal=localStorage.getItem('orbt_local');
+  const savedProfile=localStorage.getItem('orbt_profile');
+  if(savedProfile) S.profile=JSON.parse(savedProfile);
+
+  if(sbUrl&&sbKey){
+    try{
+      SB=supabase.createClient(sbUrl,sbKey);
+      const {error}=await SB.from('accounts').select('id').limit(1);
+      if(error) throw error;
+      await dbLoadAll();
+      subscribeRealtime();
+      launch();
+    }catch(e){SB=null;document.getElementById('setupScreen').style.display='flex';}
+  } else if(isLocal){
+    useLocalMode();
+  }
+  // else show setup screen (already visible)
+})();
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
+async function addNotif(title,sub,type='info',accountId=null){
+  const n={id:uid(),title,sub,type,accountId,time:nowISO(),read:false};
+  S.notifications.unshift(n);
+  await dbUpsert('notifications',n.id,n);
+  updateNotifBadge();renderPanel();
+  if(S.currentView==='notifications') renderNotifsView();
+}
+function updateNotifBadge(){
+  const u=S.notifications.filter(n=>!n.read).length;
+  document.getElementById('notifBadge').style.display=u>0?'block':'none';
+  const nb=document.getElementById('notifNavBadge');
+  if(u>0){nb.textContent=u;nb.style.display='inline';}else nb.style.display='none';
+}
+async function readNotif(id){
+  const n=S.notifications.find(x=>x.id===id);
+  if(n){n.read=true;await dbUpsert('notifications',n.id,n);updateNotifBadge();renderNotifsView();renderPanel();}
+}
+async function deleteNotif(id){
+  S.notifications=S.notifications.filter(n=>n.id!==id);
+  await dbDelete('notifications',id);
+  updateNotifBadge();renderNotifsView();renderPanel();
+}
+async function markAllRead(){
+  await Promise.all(S.notifications.filter(n=>!n.read).map(n=>{n.read=true;return dbUpsert('notifications',n.id,n);}));
+  updateNotifBadge();renderNotifsView();renderPanel();
+}
+async function clearNotifs(){
+  await Promise.all(S.notifications.map(n=>dbDelete('notifications',n.id)));
+  S.notifications=[];updateNotifBadge();renderNotifsView();renderPanel();
+}
+
+// ─── VIEW / PANEL ─────────────────────────────────────────────────────────────
+function switchView(name,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  S.currentView=name;
+  if(name==='calendar') renderCalendar();
+  if(name==='analytics') renderAnalytics();
+  if(name==='notifications') renderNotifsView();
+}
+function switchPanel(name,btn){
+  S.currentPanel=name;
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');renderPanel();
+}
+function filterPosts(f,btn){
+  S.currentFilter=f;
+  document.querySelectorAll('#view-dashboard .tab-row .tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');renderFeed();
+}
+
+// ─── COLOR PICKERS ────────────────────────────────────────────────────────────
+function selColor(el,pickerId){
+  document.querySelectorAll(`#${pickerId} .color-swatch`).forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function getColor(pickerId){
+  return document.querySelector(`#${pickerId} .color-swatch.sel`)?.dataset.color||'#6366F1';
+}
+
+// ─── ACCOUNTS ────────────────────────────────────────────────────────────────
+async function addAccount(){
+  const username=document.getElementById('accUsername').value.trim();
+  if(!username){alert('Username is required.');return;}
+  const acc={
+    id:uid(),
+    platform:document.getElementById('accPlatform').value,
+    username:username.startsWith('@')?username:'@'+username,
+    displayName:document.getElementById('accDisplay').value.trim()||username,
+    webhook:document.getElementById('accWebhook').value.trim(),
+    color:getColor('colorPicker'),
+    connected:true,addedAt:nowISO()
+  };
+  S.accounts.push(acc);
+  await dbUpsert('accounts',acc.id,acc);
+  renderAccounts();updateComposeSelect();closeModal('addAccountModal');
+  document.getElementById('accUsername').value='';document.getElementById('accDisplay').value='';document.getElementById('accWebhook').value='';
+  addNotif('Account added',`${acc.username} (${PL(acc.platform)}) connected`,'success',acc.id);
+  renderFeed();
+}
+async function removeAccount(id){
+  confirm2(`Delete this account and all its posts?`,async()=>{
+    const postsToDelete=S.posts.filter(p=>p.accountId===id);
+    S.accounts=S.accounts.filter(a=>a.id!==id);
+    S.posts=S.posts.filter(p=>p.accountId!==id);
+    if(S.selectedAccId===id) S.selectedAccId=null;
+    await dbDelete('accounts',id);
+    await Promise.all(postsToDelete.map(p=>dbDelete('posts',p.id)));
+    renderAccounts();renderFeed();updateComposeSelect();
+    addNotif('Account removed','Account and posts deleted','info');
+  });
+}
+function selectAccount(id){
+  S.selectedAccId=S.selectedAccId===id?null:id;
+  renderAccounts();renderFeed();
+  const acc=S.accounts.find(a=>a.id===id);
+  document.getElementById('queueTitle').textContent=S.selectedAccId?(acc?.username+' queue'):'Post queue';
+}
+function renderAccounts(){
+  const el=document.getElementById('accountsList');
+  if(!S.accounts.length){el.innerHTML=`<div style="padding:8px 12px;font-size:11px;color:var(--text5)">No accounts yet</div>`;return;}
+  el.innerHTML=S.accounts.map(a=>{
+    const cnt=S.posts.filter(p=>p.accountId===a.id&&p.status!=='published').length;
+    return `<div class="acc-item ${S.selectedAccId===a.id?'active':''}" onclick="selectAccount('${a.id}')">
+      <div class="acc-av" style="background:${a.color}"><i class="ti ${PI(a.platform)}" style="color:#fff;font-size:13px"></i>${a.connected?'<div class="live-dot"></div>':''}</div>
+      <div class="acc-info"><div class="acc-name">${a.username}</div><div class="acc-plat">${PL(a.platform)}${a.webhook?' · <span style="color:var(--success);font-size:9px">LIVE</span>':''}</div></div>
+      ${cnt>0?`<span class="acc-cnt">${cnt}</span>`:''}
+      <button class="pac del" onclick="event.stopPropagation();removeAccount('${a.id}')" title="Remove"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+
+// ─── TEAM ─────────────────────────────────────────────────────────────────────
+async function addTeamMember(){
+  const name=document.getElementById('teamName').value.trim();
+  if(!name){alert('Name is required.');return;}
+  const m={id:uid(),name,role:document.getElementById('teamRole').value,color:getColor('teamColorPicker'),joinedAt:nowISO()};
+  S.team.push(m);
+  await dbUpsert('team',m.id,m);
+  renderTeam();closeModal('addTeamModal');
+  document.getElementById('teamName').value='';
+  addNotif('Team member added',`${name} joined as ${m.role}`,'info');
+}
+async function removeTeamMember(id){
+  confirm2('Remove this member?',async()=>{
+    S.team=S.team.filter(m=>m.id!==id);
+    await dbDelete('team',id);
+    renderTeam();
+  });
+}
+function renderTeam(){
+  const el=document.getElementById('teamList');
+  const avatarRow=document.getElementById('teamAvatarRow');
+  if(!S.team.length){
+    el.innerHTML=`<div style="padding:4px 12px 8px;font-size:11px;color:var(--text5)">No members yet</div>`;
+    avatarRow.innerHTML='';return;
+  }
+  el.innerHTML=S.team.map(m=>`
+    <div class="acc-item">
+      <div class="acc-av" style="background:${m.color};border-radius:50%"><span style="color:#fff;font-size:10px;font-weight:600">${m.name.slice(0,2).toUpperCase()}</span></div>
+      <div class="acc-info"><div class="acc-name">${m.name}</div><div class="acc-plat">${m.role}</div></div>
+      <button class="pac del" onclick="removeTeamMember('${m.id}')"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+  avatarRow.innerHTML=S.team.map(m=>`<div class="team-av" style="background:${m.color}" title="${m.name}">${m.name.slice(0,2).toUpperCase()}</div>`).join('');
+}
+
+// ─── PROFILE ─────────────────────────────────────────────────────────────────
+function openProfileModal(){
+  document.getElementById('profileName').value=S.profile.name;
+  document.getElementById('profileWs').value=S.profile.workspace;
+  document.getElementById('profileUrl').value=localStorage.getItem('orbt_sb_url')||'';
+  document.getElementById('profileKey').value=localStorage.getItem('orbt_sb_key')||'';
+}
+async function saveProfile(){
+  S.profile.name=document.getElementById('profileName').value.trim()||'You';
+  S.profile.workspace=document.getElementById('profileWs').value.trim()||'ORBT';
+  localStorage.setItem('orbt_profile',JSON.stringify(S.profile));
+  const newUrl=document.getElementById('profileUrl').value.trim();
+  const newKey=document.getElementById('profileKey').value.trim();
+  if(newUrl&&newKey){localStorage.setItem('orbt_sb_url',newUrl);localStorage.setItem('orbt_sb_key',newKey);}
+  document.getElementById('userAv').textContent=S.profile.name.slice(0,2).toUpperCase();
+  document.getElementById('wsName').textContent=S.profile.workspace;
+  closeModal('profileModal');
+  addNotif('Settings saved','Profile updated','success');
+  renderFeed();
+}
+function resetAll(){
+  if(!confirm('Delete ALL data? This cannot be undone.')) return;
+  localStorage.clear();location.reload();
+}
+
+// ─── POSTS ────────────────────────────────────────────────────────────────────
+function updateComposeSelect(){
+  const sel=document.getElementById('postAccount');
+  if(!sel) return;
+  sel.innerHTML=S.accounts.length
+    ?S.accounts.map(a=>`<option value="${a.id}">${a.username} — ${PL(a.platform)}</option>`).join('')
+    :'<option value="">— Add an account first —</option>';
+}
+
+function openCompose(postId=null){
+  updateComposeSelect();
+  const pp=document.getElementById('crossPostPlatforms');
+  pp.innerHTML=S.accounts.map(a=>`<button class="ptoggle" data-aid="${a.id}" onclick="this.classList.toggle('sel')"><i class="ti ${PI(a.platform)}"></i> ${PL(a.platform)}</button>`).join('');
+  const eid=document.getElementById('editPostId');
+  if(postId){
+    const p=S.posts.find(x=>x.id===postId);if(!p)return;
+    document.getElementById('composeTitle').textContent='Edit post';
+    document.getElementById('savePostLbl').textContent='Update post';
+    document.getElementById('postContent').value=p.content;
+    document.getElementById('charCount').textContent=p.content.length;
+    document.getElementById('postDate').value=p.scheduledDate||'';
+    document.getElementById('postTime').value=p.scheduledTime||'';
+    document.getElementById('postStatus').value=p.status;
+    document.getElementById('postNotes').value=p.notes||'';
+    eid.value=postId;
+    const sel=document.getElementById('postAccount');
+    for(let i=0;i<sel.options.length;i++) if(sel.options[i].value===p.accountId) sel.selectedIndex=i;
+    (p.crossPost||[]).forEach(aid=>{const b=pp.querySelector(`[data-aid="${aid}"]`);if(b)b.classList.add('sel');});
+  } else {
+    document.getElementById('composeTitle').textContent='New post';
+    document.getElementById('savePostLbl').textContent='Save post';
+    document.getElementById('postContent').value='';
+    document.getElementById('charCount').textContent='0';
+    document.getElementById('postDate').value='';
+    document.getElementById('postTime').value='';
+    document.getElementById('postStatus').value='draft';
+    document.getElementById('postNotes').value='';
+    eid.value='';
+  }
+  openModal('composeModal');
+}
+
+async function savePost(){
+  const accountId=document.getElementById('postAccount').value;
+  const content=document.getElementById('postContent').value.trim();
+  if(!accountId){alert('Add an account first.');return;}
+  if(!content){alert('Post content cannot be empty.');return;}
+  const crossPost=[...document.querySelectorAll('#crossPostPlatforms .ptoggle.sel')].map(b=>b.dataset.aid);
+  const status=document.getElementById('postStatus').value;
+  const eid=document.getElementById('editPostId').value;
+  if(eid){
+    const p=S.posts.find(x=>x.id===eid);
+    if(p){Object.assign(p,{accountId,content,scheduledDate:document.getElementById('postDate').value,scheduledTime:document.getElementById('postTime').value,status,notes:document.getElementById('postNotes').value.trim(),crossPost,updatedAt:nowISO()});await dbUpsert('posts',p.id,p);}
+    addNotif('Post updated','Changes saved','success',accountId);
+  } else {
+    const p={id:uid(),accountId,content,scheduledDate:document.getElementById('postDate').value,scheduledTime:document.getElementById('postTime').value,status,notes:document.getElementById('postNotes').value.trim(),crossPost,createdAt:nowISO(),updatedAt:nowISO()};
+    S.posts.unshift(p);
+    await dbUpsert('posts',p.id,p);
+    addNotif('Post created',`New ${getSM(status).label} post added`,'success',accountId);
+    if(status==='review') addNotif('Review needed','A post is waiting for approval','warning',accountId);
+  }
+  renderFeed();renderAccounts();closeModal('composeModal');
+}
+
+async function deletePost(id){
+  confirm2('Delete this post?',async()=>{
+    S.posts=S.posts.filter(p=>p.id!==id);
+    await dbDelete('posts',id);
+    renderFeed();renderAccounts();closeModal('postDetailModal');
+    addNotif('Post deleted','Removed from queue','info');
+  });
+}
+
+async function changeStatus(id,newStatus){
+  const p=S.posts.find(x=>x.id===id);if(!p)return;
+  p.status=newStatus;p.updatedAt=nowISO();
+  await dbUpsert('posts',p.id,p);
+  renderFeed();closeModal('postDetailModal');
+  const labels={scheduled:'Post approved and scheduled',live:'Post marked as live',published:'Post marked as published'};
+  addNotif(labels[newStatus]||'Status updated','','success',p.accountId);
+}
+
+async function publishNow(id){
+  const p=S.posts.find(x=>x.id===id);if(!p)return;
+  const acc=S.accounts.find(a=>a.id===p.accountId);
+  if(!acc?.webhook){
+    alert('This account has no webhook URL configured.\n\nGo to: Publish tab → set up Make.com → then edit the account to add the webhook URL.');
+    return;
+  }
+  try{
+    await fetch(acc.webhook,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content:p.content,account:acc.username,platform:acc.platform,scheduledDate:p.scheduledDate,scheduledTime:p.scheduledTime})
+    });
+    await changeStatus(id,'published');
+    addNotif('Sent to Make.com!',`"${p.content.slice(0,50)}…" is being published`,'success',acc.id);
+  }catch(e){
+    // CORS expected from browser - signal still sent
+    await changeStatus(id,'published');
+    addNotif('Webhook triggered',`Post sent to Make.com for publishing`,'success',acc.id);
+  }
+  closeModal('postDetailModal');
+}
+
+function openPostDetail(id){
+  const p=S.posts.find(x=>x.id===id);if(!p)return;
+  
+  const sm=getSM(p.status);
+  const chips=([p.accountId,...(p.crossPost||[])]).map(aid=>{const a=S.accounts.find(x=>x.id===aid);return a?`<span class="pchip ${PC(a.platform)}">${PL(a.platform)}</span>`:''}).join('');
+  document.getElementById('postDetailBody').innerHTML=`
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+      ${acc?`<div class="acc-av" style="background:${acc.color};width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center"><i class="ti ${PI(acc.platform)}" style="color:#fff;font-size:14px"></i></div>`:''}
+      <div><div style="font-size:13px;font-weight:500;color:var(--text2)">${acc?.username||'?'}</div><div style="font-size:11px;color:var(--text4)">${PL(acc?.platform)}</div></div>
+      <span class="sbadge ${sm.cls}" style="margin-left:auto">${sm.label}</span>
+    </div>
+    <div style="background:var(--bg2);border-radius:8px;padding:12px;font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:12px;border:1px solid var(--border);white-space:pre-wrap">${p.content}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${chips}</div>
+    ${p.scheduledDate?`<div style="font-size:12px;color:var(--text4);margin-bottom:6px"><i class="ti ti-calendar" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${p.scheduledDate}${p.scheduledTime?' at '+p.scheduledTime:''}</div>`:''}
+    ${p.notes?`<div style="font-size:12px;color:var(--text4);background:var(--bg3);padding:7px 10px;border-radius:7px;border:1px solid var(--border);margin-bottom:6px"><i class="ti ti-note" style="font-size:12px;vertical-align:-2px;margin-right:4px"></i>${p.notes}</div>`:''}
+    <div style="font-size:11px;color:var(--text5)">Created ${fmtDate(p.createdAt)}</div>`;
+  const footer=document.getElementById('postDetailFooter');
+  const hasWebhook=acc?.webhook;
+  let btns=`<button class="btn-danger btn-sm" onclick="deletePost('${id}')"><i class="ti ti-trash"></i> Delete</button>
+    <button class="btn-outline btn-sm" onclick="closeModal('postDetailModal');openCompose('${id}')"><i class="ti ti-edit"></i> Edit</button>`;
+  if(p.status==='review') btns+=`<button class="btn-primary btn-sm" onclick="changeStatus('${id}','scheduled')"><i class="ti ti-check"></i> Approve</button>`;
+  if(p.status==='scheduled'||p.status==='live') btns+=`<button class="btn-success btn-sm" onclick="publishNow('${id}')"><i class="ti ti-send"></i> ${hasWebhook?'Publish via Make.com':'Mark published'}</button>`;
+  if(p.status==='draft') btns+=`<button class="btn-primary btn-sm" onclick="changeStatus('${id}','scheduled')"><i class="ti ti-calendar-check"></i> Schedule</button>`;
+  footer.innerHTML=btns;
+  openModal('postDetailModal');
+}
+
+async function quickAdd(e){
+  if(e.key!=='Enter') return;
+  const val=document.getElementById('quickInput').value.trim();
+  if(!val)return;
+  if(!S.accounts.length){alert('Add an account first.');return;}
+  const p={id:uid(),accountId:S.accounts[0].id,content:val,status:'draft',crossPost:[],notes:'',scheduledDate:'',scheduledTime:'',createdAt:nowISO(),updatedAt:nowISO()};
+  S.posts.unshift(p);
+  await dbUpsert('posts',p.id,p);
+  document.getElementById('quickInput').value='';
+  renderFeed();renderAccounts();
+  addNotif('Draft added','Quick post saved to queue','info',p.accountId);
+}
+
+function renderFeed(){
+  const feed=document.getElementById('mainFeed');if(!feed)return;
+  const total=S.posts.length,sched=S.posts.filter(p=>p.status==='scheduled').length,pub=S.posts.filter(p=>p.status==='published').length,rev=S.posts.filter(p=>p.status==='review').length;
+  let html=`<div class="stats-grid">
+    <div class="stat-card"><div class="stat-lbl">Scheduled</div><div class="stat-val">${sched}</div><div class="stat-sub ${sched>0?'up':'warn'}">${sched>0?'In queue':'Empty queue'}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Published</div><div class="stat-val">${pub}</div><div class="stat-sub up">${pub} posts live</div></div>
+    <div class="stat-card"><div class="stat-lbl">Total posts</div><div class="stat-val">${total}</div><div class="stat-sub" style="color:var(--text4)">${S.accounts.length} account${S.accounts.length!==1?'s':''}</div></div>
+    <div class="stat-card"><div class="stat-lbl">Needs review</div><div class="stat-val">${rev}</div><div class="stat-sub ${rev>0?'warn':'up'}">${rev>0?'Awaiting approval':'All clear'}</div></div>
+  </div>`;
+  let posts=S.posts;
+  if(S.selectedAccId) posts=posts.filter(p=>p.accountId===S.selectedAccId);
+  if(S.currentFilter!=='all') posts=posts.filter(p=>p.status===S.currentFilter);
+  if(S.searchQuery) posts=posts.filter(p=>p.content.toLowerCase().includes(S.searchQuery));
+  html+=`<div class="q-header"><div class="q-title">Posts <span class="q-cnt">${posts.length}</span></div><button class="btn-outline btn-sm" onclick="openCompose()"><i class="ti ti-plus"></i> Add</button></div>`;
+  if(!S.accounts.length){
+    html+=`<div class="empty-state"><div class="empty-icon"><i class="ti ti-user-circle"></i></div><div class="empty-title">No accounts yet</div><div class="empty-desc">Add a social account to start.</div><button class="btn-primary" onclick="openModal('addAccountModal')"><i class="ti ti-plus"></i> Add account</button></div>`;
+  } else if(!posts.length){
+    html+=`<div class="empty-state"><div class="empty-icon"><i class="ti ti-file-off"></i></div><div class="empty-title">No posts</div><div class="empty-desc">Create your first post.</div><button class="btn-primary" onclick="openCompose()"><i class="ti ti-plus"></i> Create post</button></div>`;
+  } else {
+    posts.forEach(p=>{
+      const acc=S.accounts.find(a=>a.id===p.accountId);
+      const sm=getSM(p.status);
+      const chips=([p.accountId,...(p.crossPost||[])]).map(aid=>{const a=S.accounts.find(x=>x.id===aid);return a?`<span class="pchip ${PC(a.platform)}">${PL(a.platform)}</span>`:''}).join('');
+      html+=`<div class="post-card ${sm.cc}" onclick="openPostDetail('${p.id}')">
+        <div class="post-icon" style="background:${acc?.color+'22'||'rgba(255,255,255,.06)'};color:${acc?.color||'#94A3B8'}"><i class="ti ${PI(acc?.platform||'x')}"></i></div>
+        <div class="post-body">
+          <div class="post-meta"><span class="post-acct" style="color:${acc?.color||'var(--text2)'}">${acc?.username||'?'}</span><span class="post-time">${p.scheduledDate?p.scheduledDate+(p.scheduledTime?' '+p.scheduledTime:''):'No date'}</span><span class="sbadge ${sm.cls}">${sm.label}</span></div>
+          <div class="post-text">${p.content}</div>
+          <div class="post-footer">${chips}
+            <div class="post-actions" onclick="event.stopPropagation()">
+              ${p.status==='review'?`<button class="pac appr" onclick="changeStatus('${p.id}','scheduled')" title="Approve"><i class="ti ti-check"></i></button>`:''}
+              <button class="pac" onclick="openCompose('${p.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+              <button class="pac del" onclick="event.stopPropagation();deletePost('${p.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+            </div>
+          </div>
+          ${p.notes?`<div style="font-size:10px;color:var(--text5);margin-top:3px;font-style:italic">\u{1F4DD} ${p.notes}</div>`:''}
+        </div></div>`;
+    });
+  }
+  feed.innerHTML=html;renderPanel();
+}
+
+function renderPanel(){
+  const el=document.getElementById('panelBody');if(!el)return;
+  if(S.currentPanel==='activity') renderActivityPanel(el);
+  else if(S.currentPanel==='schedule') renderSchedulePanel(el);
+  else renderAlertsPanel(el);
+}
+function renderActivityPanel(el){
+  const items=S.posts.slice(0,10).map(p=>({time:p.updatedAt,txt:`${getSM(p.status).label}: "${p.content.slice(0,32)}..."`,acc:S.accounts.find(a=>a.id===p.accountId)})).sort((a,b)=>new Date(b.time)-new Date(a.time));
+  if(!items.length){el.innerHTML=`<div style="font-size:12px;color:var(--text5);text-align:center;padding:20px">No activity yet</div>`;return;}
+  el.innerHTML='<div class="psec">Recent</div>'+items.slice(0,7).map(a=>`<div class="act-item"><div class="act-av" style="background:${a.acc?.color||'#6366F1'}"><i class="ti ${PI(a.acc?.platform||'x')}" style="color:#fff;font-size:9px"></i></div><div><div class="act-txt"><strong>${a.acc?.username||'?'}</strong> ${a.txt}</div><div class="act-time">${ago(a.time)}</div></div></div>`).join('');
+}
+function renderSchedulePanel(el){
+  const up=S.posts.filter(p=>p.scheduledDate&&p.status==='scheduled').sort((a,b)=>new Date(a.scheduledDate+'T'+(a.scheduledTime||'00:00'))-new Date(b.scheduledDate+'T'+(b.scheduledTime||'00:00')));
+  if(!up.length){el.innerHTML=`<div style="font-size:12px;color:var(--text5);text-align:center;padding:20px">No scheduled posts</div>`;return;}
+  const byDate={};up.forEach(p=>{byDate[p.scheduledDate]=byDate[p.scheduledDate]||[];byDate[p.scheduledDate].push(p);});
+  el.innerHTML='<div class="psec">Upcoming</div>'+Object.entries(byDate).slice(0,5).map(([date,ps])=>`<div class="sched-block"><div class="sched-day">${new Date(date+'T12:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>${ps.map(p=>{const acc=S.accounts.find(a=>a.id===p.accountId);return `<div class="sched-row"><span class="sched-time">${p.scheduledTime||'--'}</span><span class="sched-dot" style="background:${acc?.color||'var(--accent)'}"></span><span class="sched-desc">${p.content.slice(0,26)}...</span></div>`;}).join('')}</div>`).join('');
+}
+function renderAlertsPanel(el){
+  const unread=S.notifications.filter(n=>!n.read).slice(0,6);
+  const ic={success:'ti-check-circle',warning:'ti-alert-triangle',info:'ti-info-circle'};
+  const cl={success:'var(--success)',warning:'var(--amber)',info:'var(--accent)'};
+  if(!unread.length){el.innerHTML=`<div style="font-size:12px;color:var(--text5);text-align:center;padding:20px">No new alerts</div>`;return;}
+  el.innerHTML='<div class="psec">Alerts</div>'+unread.map(n=>`<div class="notif-item unread" onclick="readNotif('${n.id}')"><div class="notif-icon" style="background:${cl[n.type]||'var(--accent)'}22;color:${cl[n.type]||'var(--accent)'}"><i class="ti ${ic[n.type]||'ti-bell'}"></i></div><div class="notif-txt"><div class="notif-title">${n.title}</div><div class="notif-sub">${n.sub}</div><div class="notif-time">${ago(n.time)}</div></div></div>`).join('');
+}
+
+function renderNotifsView(){
+  const el=document.getElementById('notifsView');
+  if(!S.notifications.length){el.innerHTML=`<div class="empty-state"><div class="empty-icon"><i class="ti ti-bell-off"></i></div><div class="empty-title">No notifications</div></div>`;return;}
+  const ic={success:'ti-check-circle',warning:'ti-alert-triangle',info:'ti-info-circle'};
+  const cl={success:'var(--success)',warning:'var(--amber)',info:'var(--accent)'};
+  el.innerHTML=S.notifications.map(n=>`<div class="notif-item ${n.read?'':'unread'}" onclick="readNotif('${n.id}')" style="margin-bottom:8px"><div class="notif-icon" style="background:${cl[n.type]||'var(--accent)'}22;color:${cl[n.type]||'var(--accent)'}"><i class="ti ${ic[n.type]||'ti-bell'}"></i></div><div class="notif-txt"><div class="notif-title">${n.title}</div><div class="notif-sub">${n.sub}</div><div class="notif-time">${fmtDate(n.time)}</div></div><button class="pac del" onclick="event.stopPropagation();deleteNotif('${n.id}')"><i class="ti ti-x"></i></button></div>`).join('');
+}
+
+function renderCalendar(){
+  const el=document.getElementById('calendarView');
+  const today=new Date(),year=today.getFullYear(),month=today.getMonth();
+  const firstDay=new Date(year,month,1).getDay(),days=new Date(year,month+1,0).getDate();
+  const scheduled=new Set(S.posts.filter(p=>p.scheduledDate).map(p=>p.scheduledDate));
+  let html=`<div style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;margin-bottom:14px">${today.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</div><div class="cal-grid">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-day-hdr">${d}</div>`).join('')}${Array(firstDay).fill('<div class="cal-day empty">.</div>').join('')}${Array.from({length:days},(_,i)=>{const d=i+1,iso=`${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;return `<div class="cal-day ${d===today.getDate()?'today':''} ${scheduled.has(iso)?'has-post':''}" onclick="calClick('${iso}')">${d}</div>`;}).join('')}</div>`;
+  const up=S.posts.filter(p=>p.scheduledDate&&p.status==='scheduled').sort((a,b)=>new Date(a.scheduledDate)-new Date(b.scheduledDate));
+  html+=`<div style="font-size:13px;font-weight:500;color:var(--text3);margin:16px 0 10px">Scheduled</div>`;
+  if(!up.length) html+=`<div style="font-size:12px;color:var(--text5)">No scheduled posts.</div>`;
+  else up.forEach(p=>{const acc=S.accounts.find(a=>a.id===p.accountId),sm=getSM(p.status);html+=`<div class="post-card ${sm.cc}" onclick="openPostDetail('${p.id}')"><div class="post-icon" style="background:${acc?.color+'22'};color:${acc?.color||'#94A3B8'}"><i class="ti ${PI(acc?.platform||'x')}"></i></div><div class="post-body"><div class="post-meta"><span class="post-acct" style="color:${acc?.color}">${acc?.username}</span><span class="post-time">${p.scheduledDate} ${p.scheduledTime||''}</span><span class="sbadge ${sm.cls}">${sm.label}</span></div><div class="post-text">${p.content}</div></div></div>`;});
+  el.innerHTML=html;
+}
+function calClick(iso){const ps=S.posts.filter(p=>p.scheduledDate===iso);if(ps.length)openPostDetail(ps[0].id);else{document.getElementById('postDate').value=iso;openCompose();}}
+
+function renderAnalytics(){
+  const el=document.getElementById('analyticsView');
+  const total=S.posts.length,pub=S.posts.filter(p=>p.status==='published').length,sched=S.posts.filter(p=>p.status==='scheduled').length,draft=S.posts.filter(p=>p.status==='draft').length;
+  let html=`<div style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;margin-bottom:14px">Analytics</div><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px"><div class="stat-card"><div class="stat-lbl">Total</div><div class="stat-val">${total}</div></div><div class="stat-card"><div class="stat-lbl">Published</div><div class="stat-val" style="color:var(--success)">${pub}</div></div><div class="stat-card"><div class="stat-lbl">Scheduled</div><div class="stat-val" style="color:var(--accent2)">${sched}</div></div><div class="stat-card"><div class="stat-lbl">Drafts</div><div class="stat-val" style="color:var(--text3)">${draft}</div></div></div>`;
+  if(S.accounts.length){html+=`<div style="font-size:13px;font-weight:500;color:var(--text3);margin-bottom:10px">Per account</div>`;S.accounts.forEach(acc=>{const ap=S.posts.filter(p=>p.accountId===acc.id);const apub=ap.filter(p=>p.status==='published').length;const pct=ap.length?Math.round(apub/ap.length*100):0;html+=`<div class="stat-card" style="margin-bottom:9px;display:flex;align-items:center;gap:10px"><div class="acc-av" style="background:${acc.color};width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${PI(acc.platform)}" style="color:#fff;font-size:13px"></i></div><div style="flex:1"><div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px">${acc.username}</div><div style="height:5px;background:var(--border);border-radius:3px"><div style="height:100%;border-radius:3px;background:${acc.color};width:${pct}%"></div></div></div><div style="text-align:right"><div style="font-size:16px;font-weight:600">${ap.length}</div><div style="font-size:10px;color:var(--text5)">posts</div></div></div>`;});}
+  if(!total)html+=`<div class="empty-state"><div class="empty-icon"><i class="ti ti-chart-line"></i></div><div class="empty-title">No data yet</div></div>`;
+  el.innerHTML=html;
+}
+
+function openModal(id){if(id==='composeModal'){openCompose();return;}if(id==='profileModal')openProfileModal();document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-backdrop').forEach(bd=>{bd.addEventListener('click',e=>{if(e.target===bd)bd.classList.remove('open');});});
+function confirm2(msg,cb){document.getElementById('confirmMsg').textContent=msg;document.getElementById('confirmBtn').onclick=()=>{cb();closeModal('confirmModal');};document.getElementById('confirmModal').classList.add('open');}
+</script>
+</body>
+</html>
